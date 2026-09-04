@@ -63,6 +63,7 @@
     </div>
     <div style="text-align:right;">
       <div class="sub" style="margin-top:8px;" id="asOf">数据截至 —</div>
+      <div class="sub" id="dataStart">数据起始 —</div>
     </div>
   </div>
 
@@ -126,8 +127,7 @@
   </div>
 
   <div class="foot">
-    本页面为策略模拟盘（Paper Trading），数据仅供研究参考，不构成任何投资建议。<br>
-    信号来源：新浪财经日线数据 · 按趋势方向分配额度（多头市场 6% 做多 + 1% 做空，空头市场 1% 做空）· 持仓上限 70%
+    本页面为策略模拟盘（Paper Trading），数据仅供研究参考，不构成任何投资建议。
   </div>
 </div>
 
@@ -171,6 +171,8 @@ function render(DATA){
   document.getElementById('holdCnt').className = 'delta';
 
   document.getElementById('asOf').textContent = '数据截至 ' + (DATA.as_of || '—');
+  const dataStart = DATA.data_start || (DATA.equity_curve && DATA.equity_curve.length ? DATA.equity_curve[0]['日期'] : null);
+  document.getElementById('dataStart').textContent = '数据起始 ' + (dataStart || '—');
 
   // 净值曲线
   const curve = DATA.equity_curve || [];
