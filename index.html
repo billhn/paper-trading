@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>顺势策略 · 模拟交易</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1117; --panel:#161b26; --panel2:#1c2230; --border:#262d3d;
+    --txt:#e6edf3; --txt2:#8b98a9; --up:#e05252; --down:#2bd68a;
+    --accent:#4f8ef7; --gold:#d4af37;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--txt); min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:28px 20px 60px;}
+
+  .head{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px;}
+  .head h1{font-size:22px; font-weight:700; letter-spacing:.5px;}
+  .head .sub{color:var(--txt2); font-size:13px; margin-top:6px;}
+  .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;}
+  .badge.long{background:rgba(224,82,82,.14); color:var(--up); border:1px solid rgba(224,82,82,.3);}
+  .badge.short{background:rgba(43,214,138,.14); color:var(--down); border:1px solid rgba(43,214,138,.3);}
+
+  .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px 16px;}
+  .card .label{font-size:12px; color:var(--txt2); margin-bottom:8px;}
+  .card .val{font-size:26px; font-weight:700; letter-spacing:.3px;}
+  .card .val.gold{color:var(--gold);}
+  .card .delta{font-size:12px; margin-top:6px; font-weight:600;}
+  .up{color:var(--up);} .down{color:var(--down);}
+
+  .section{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:18px;}
+  .section h2{font-size:15px; font-weight:700; margin-bottom:16px; color:var(--txt);}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--txt2); font-weight:500; padding:10px 8px; border-bottom:1px solid var(--border); font-size:12px;}
+  td{padding:10px 8px; border-bottom:1px solid rgba(38,45,61,.6);}
+  tr:last-child td{border-bottom:none;}
+  .num{text-align:right; font-variant-numeric:tabular-nums;}
+
+  canvas{width:100%; height:100%; display:block;}
+  .chart-box{height:300px;}
+
+  .foot{color:var(--txt2); font-size:11px; text-align:center; margin-top:24px; line-height:1.7;}
+  .sym-chip{display:inline-block; padding:2px 8px; border-radius:6px; background:var(--panel2); font-size:11px; font-family:monospace; color:var(--txt2); margin-left:6px;}
+
+  @media(max-width:820px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>顺势策略 · 模拟交易</h1>
+    </div>
+    <div style="text-align:right;">
+      <div class="sub" style="margin-top:8px;" id="asOf">数据截至 —</div>
+    </div>
+  </div>
+
+  <!-- 核心指标 -->
+  <div class="grid">
+    <div class="card">
+      <div class="label">权益规模（总市值）</div>
+      <div class="val" id="equity">—</div>
+      <div class="delta" id="posRatio">仓位 —</div>
+    </div>
+    <div class="card">
+      <div class="label">总收益</div>
+      <div class="val gold" id="totalReturn">—</div>
+      <div class="delta" id="totalReturnDelta">—</div>
+    </div>
+    <div class="card">
+      <div class="label">当日收益</div>
+      <div class="val" id="todayReturn">—</div>
+      <div class="delta" id="todayReturnDelta">—</div>
+    </div>
+    <div class="card">
+      <div class="label">成功率（平仓胜率）</div>
+      <div class="val" id="winRate">—</div>
+      <div class="delta" id="tradeCount">—</div>
+    </div>
+    <div class="card">
+      <div class="label">可用资金</div>
+      <div class="val" id="cash">—</div>
+      <div class="delta" id="holdCnt">—</div>
+    </div>
+  </div>
+
+  <!-- 净值曲线 -->
+  <div class="section">
+    <h2>权益净值走势</h2>
+    <div class="chart-box"><canvas id="equityChart"></canvas></div>
+  </div>
+
+  <!-- 当日持仓明细 -->
+  <div class="section">
+    <h2>当日持仓明细</h2>
+    <table id="holdingsTable">
+      <thead><tr>
+        <th>品种</th><th>方向</th><th>开仓日</th><th class="num">开仓价</th>
+        <th class="num">最新价</th><th class="num">浮动盈亏</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 近期成交 -->
+  <div class="section">
+    <h2>近期成交记录</h2>
+    <table id="tradesTable">
+      <thead><tr>
+        <th>平仓日</th><th>品种</th><th>方向</th><th class="num">开仓价</th>
+        <th class="num">平仓价</th><th>结果</th><th class="num">盈亏%</th><th class="num">持有天数</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    本页面为策略模拟盘（Paper Trading），数据仅供研究参考，不构成任何投资建议。<br>
+    信号来源：新浪财经日线数据 · 按趋势方向分配额度（多头市场 6% 做多 + 1% 做空，空头市场 1% 做空）· 持仓上限 70%
+  </div>
+</div>
+
+<script>
+const DATA_URL = 'data.json';
+
+function fmt(v, digits=2){
+  if(v==null || isNaN(v)) return '—';
+  return Number(v).toLocaleString('zh-CN',{minimumFractionDigits:digits, maximumFractionDigits:digits});
+}
+function fmtInt(v){ return v==null? '—' : Number(v).toLocaleString('zh-CN'); }
+function pct(v, signed=true){
+  if(v==null || isNaN(v)) return '—';
+  const s = (v>0 && signed) ? '+' : '';
+  return s + Number(v).toFixed(2) + '%';
+}
+function colorFor(v){ return v>0 ? 'up' : (v<0 ? 'down' : ''); }
+
+let equityChartInstance = null;
+
+function render(DATA){
+  // 顶部指标
+  document.getElementById('equity').textContent = '¥' + fmt(DATA.equity);
+  document.getElementById('totalReturn').textContent = pct(DATA.total_return_pct);
+  document.getElementById('totalReturn').className = 'val gold';
+  document.getElementById('todayReturn').textContent = pct(DATA.today_return_pct);
+  document.getElementById('todayReturn').className = 'val ' + colorFor(DATA.today_return_pct);
+  document.getElementById('winRate').textContent = pct(DATA.win_rate_pct, false);
+  document.getElementById('cash').textContent = '¥' + fmt(DATA.cash, 0);
+
+  // 副指标
+  document.getElementById('posRatio').textContent = '持仓 ' + pct(DATA.position_ratio_pct, false);
+  document.getElementById('posRatio').className = 'delta';
+  document.getElementById('totalReturnDelta').textContent = '初始 ¥' + fmtInt(DATA.initial_capital);
+  document.getElementById('totalReturnDelta').className = 'delta';
+  document.getElementById('todayReturnDelta').textContent = '较前一交易日';
+  document.getElementById('todayReturnDelta').className = 'delta';
+  document.getElementById('tradeCount').textContent = '累计 ' + fmtInt(DATA.trade_count) + ' 笔平仓';
+  document.getElementById('tradeCount').className = 'delta';
+  document.getElementById('holdCnt').textContent = fmtInt(DATA.holdings.length) + ' 个持仓';
+  document.getElementById('holdCnt').className = 'delta';
+
+  document.getElementById('asOf').textContent = '数据截至 ' + (DATA.as_of || '—');
+
+  // 净值曲线
+  const curve = DATA.equity_curve || [];
+  const labels = curve.map(e=>e['日期']);
+  const equityArr = curve.map(e=>e['权益']);
+  const baseArr = curve.map(()=>DATA.initial_capital);
+
+  const ctx = document.getElementById('equityChart').getContext('2d');
+  if(equityChartInstance){ equityChartInstance.destroy(); }
+  try {
+    equityChartInstance = new Chart(ctx,{
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          { label:'权益', data:equityArr, borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.08)', fill:true, tension:.25, borderWidth:2, pointRadius:0 },
+          { label:'初始资金', data:baseArr, borderColor:'#57636f', borderDash:[5,5], borderWidth:1, pointRadius:0, fill:false }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index', intersect:false},
+        plugins:{
+          legend:{labels:{color:'#8b98a9', boxWidth:14, boxHeight:14, font:{size:11}}},
+          tooltip:{ callbacks:{ label:(c)=> c.dataset.label + '：¥' + fmt(c.parsed.y, 0) } }
+        },
+        scales:{
+          x:{ticks:{color:'#8b98a9', maxTicksLimit:10, font:{size:10}}, grid:{color:'rgba(38,45,61,.5)'}},
+          y:{ticks:{color:'#8b98a9', font:{size:10}, callback:(v)=>'¥'+fmt(v,0)}, grid:{color:'rgba(38,45,61,.5)'}}
+        }
+      }
+    });
+  } catch(e) {
+    console.warn('图表渲染跳过:', e && e.message);
+  }
+
+  // 持仓明细
+  const ht = document.querySelector('#holdingsTable tbody');
+  ht.innerHTML = '';
+  (DATA.holdings||[]).forEach(h=>{
+    const tr = document.createElement('tr');
+    const dirCls = h['方向']==='做多' ? 'up' : 'down';
+    tr.innerHTML = `
+      <td>${h['品种']}<span class="sym-chip">${h['合约']}</span></td>
+      <td class="${dirCls}" style="font-weight:600;">${h['方向']}</td>
+      <td class="num">${h['开仓日']}</td>
+      <td class="num">${fmt(h['开仓价'])}</td>
+      <td class="num">${fmt(h['最新价'])}</td>
+      <td class="num ${colorFor(h['浮动盈亏%'])}" style="font-weight:600;">${pct(h['浮动盈亏%'])}</td>
+    `;
+    ht.appendChild(tr);
+  });
+
+  // 成交记录（倒序，取最近50）
+  const trades = (DATA.trades||[]).slice().reverse().slice(0,50);
+  const tt = document.querySelector('#tradesTable tbody');
+  tt.innerHTML = '';
+  trades.forEach(t=>{
+    const tr = document.createElement('tr');
+    const dirCls = t['方向']==='做多' ? 'up' : 'down';
+    tr.innerHTML = `
+      <td class="num">${t['日期']}</td>
+      <td>${t['品种']}<span class="sym-chip">${t['合约']}</span></td>
+      <td class="${dirCls}">${t['方向']}</td>
+      <td class="num">${fmt(t['开仓价'])}</td>
+      <td class="num">${fmt(t['平仓价'])}</td>
+      <td>${t['结果']}</td>
+      <td class="num ${colorFor(t['盈亏%'])}" style="font-weight:600;">${pct(t['盈亏%'])}</td>
+      <td class="num">${t['持有天数']}</td>
+    `;
+    tt.appendChild(tr);
+  });
+}
+
+// 数据加载：优先动态读取 data.json；若内嵌 __DATA__ 则直接用。
+if (typeof __DATA__ !== 'undefined') {
+  render(__DATA__);
+} else {
+  fetch(DATA_URL, {cache:'no-store'})
+    .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => render(data))
+    .catch(e => {
+      document.getElementById('equity').textContent = '加载失败';
+      document.getElementById('asOf').textContent = '无法读取数据：' + e.message;
+      console.error(e);
+    });
+}
+</script>
+</body>
+</html>
