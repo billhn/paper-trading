@@ -8,6 +8,10 @@
   "today_return_pct": 0.0,
   "win_rate_pct": 0.0,
   "trade_count": 0,
+  "avg_win_pct": null,
+  "avg_loss_pct": null,
+  "profit_factor": null,
+  "max_drawdown_pct": 0.0,
   "holdings": [
     {
       "品种": "豆粕",
