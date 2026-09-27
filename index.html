@@ -171,7 +171,6 @@ function render(DATA){
   document.getElementById('winRate').textContent = pct(DATA.win_rate_pct, false);
   document.getElementById('profitFactor').textContent = DATA.profit_factor != null ? fmt(DATA.profit_factor, 3) : '—';
   document.getElementById('profitFactor').className = 'val gold';
-  document.getElementById('cash').textContent = '¥' + fmt(DATA.cash, 0);
 
   // 副指标
   document.getElementById('posRatio').textContent = '持仓 ' + pct(DATA.position_ratio_pct, false);
