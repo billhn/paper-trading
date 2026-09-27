@@ -119,14 +119,14 @@
     </table>
   </div>
 
-  <!-- 明日建仓（今日新触发信号） -->
+  <!-- 今日新触发信号 -->
   <div class="section">
-    <h2>明日建仓（今日新触发信号）</h2>
+    <h2>今日新触发信号</h2>
     <div class="sub" id="signalMeta" style="margin-bottom:12px;">—</div>
     <table id="signalsTable">
       <thead><tr>
-        <th>板块</th><th>品种</th><th>方向</th><th class="num">参考价(收盘)</th>
-        <th class="num">建议开仓价</th><th class="num">突破/跌破</th><th class="num">止损</th><th class="num">止盈</th>
+        <th>板块</th><th>品种</th><th>方向</th>
+        <th class="num">建议开仓价</th><th class="num">止损</th><th class="num">止盈</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -263,14 +263,11 @@ function render(DATA){
     rows.forEach(s=>{
       const tr = document.createElement('tr');
       const dirCls = s['方向']==='做多' ? 'up' : 'down';
-      const breakout = s['方向']==='做多' ? ('前' + (s['突破']||'-') + '日新高') : ('前' + (s['跌破']||'-') + '日新低');
       tr.innerHTML = `
         <td>${s['板块']||''}</td>
         <td>${s['品种']||''}<span class="sym-chip">${s['合约']||''}</span></td>
         <td class="${dirCls}" style="font-weight:600;">${s['方向']}</td>
-        <td class="num">${fmt(s['参考价'])}</td>
         <td class="num">${fmt(s['建议价'])}</td>
-        <td class="num">${breakout}</td>
         <td class="num">${fmt(s['止损'])}</td>
         <td class="num">${fmt(s['止盈'])}</td>
       `;
