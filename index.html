@@ -90,6 +90,11 @@
       <div class="delta" id="tradeCount">—</div>
     </div>
     <div class="card">
+      <div class="label">盈亏比（利润因子）</div>
+      <div class="val gold" id="profitFactor">—</div>
+      <div class="delta" id="profitFactorDesc">平均盈利/平均亏损</div>
+    </div>
+    <div class="card">
       <div class="label">可用资金</div>
       <div class="val" id="cash">—</div>
       <div class="delta" id="holdCnt">—</div>
@@ -156,6 +161,8 @@ function render(DATA){
   document.getElementById('todayReturn').textContent = pct(DATA.today_return_pct);
   document.getElementById('todayReturn').className = 'val ' + colorFor(DATA.today_return_pct);
   document.getElementById('winRate').textContent = pct(DATA.win_rate_pct, false);
+  document.getElementById('profitFactor').textContent = DATA.profit_factor != null ? fmt(DATA.profit_factor, 3) : '—';
+  document.getElementById('profitFactor').className = 'val gold';
   document.getElementById('cash').textContent = '¥' + fmt(DATA.cash, 0);
 
   // 副指标
