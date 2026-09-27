@@ -119,6 +119,19 @@
     </table>
   </div>
 
+  <!-- 明日建仓（今日新触发信号） -->
+  <div class="section">
+    <h2>明日建仓（今日新触发信号）</h2>
+    <div class="sub" id="signalMeta" style="margin-bottom:12px;">—</div>
+    <table id="signalsTable">
+      <thead><tr>
+        <th>板块</th><th>品种</th><th>方向</th><th class="num">参考价(收盘)</th>
+        <th class="num">建议开仓价</th><th class="num">突破/跌破</th><th class="num">止损</th><th class="num">止盈</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
   <!-- 近期成交 -->
   <div class="section">
     <h2>近期成交记录</h2>
@@ -233,6 +246,37 @@ function render(DATA){
     `;
     ht.appendChild(tr);
   });
+
+  // 明日建仓（今日新触发信号）
+  const sig = DATA.today_signals || null;
+  const st = document.querySelector('#signalsTable tbody');
+  st.innerHTML = '';
+  const sigMeta = document.getElementById('signalMeta');
+  if (!sig || !sig.long || !sig.short) {
+    sigMeta.textContent = '暂无今日新触发信号';
+  } else {
+    sigMeta.textContent = (sig.date ? ('信号日 ' + sig.date + ' · ') : '') + '市场方向：' + (sig.market || '—') +
+      ' · 做多 ' + (sig.long.length) + ' 个 · 做空 ' + (sig.short.length) + ' 个';
+    const rows = [];
+    (sig.long||[]).forEach(s=>rows.push(s));
+    (sig.short||[]).forEach(s=>rows.push(s));
+    rows.forEach(s=>{
+      const tr = document.createElement('tr');
+      const dirCls = s['方向']==='做多' ? 'up' : 'down';
+      const breakout = s['方向']==='做多' ? ('前' + (s['突破']||'-') + '日新高') : ('前' + (s['跌破']||'-') + '日新低');
+      tr.innerHTML = `
+        <td>${s['板块']||''}</td>
+        <td>${s['品种']||''}<span class="sym-chip">${s['合约']||''}</span></td>
+        <td class="${dirCls}" style="font-weight:600;">${s['方向']}</td>
+        <td class="num">${fmt(s['参考价'])}</td>
+        <td class="num">${fmt(s['建议价'])}</td>
+        <td class="num">${breakout}</td>
+        <td class="num">${fmt(s['止损'])}</td>
+        <td class="num">${fmt(s['止盈'])}</td>
+      `;
+      st.appendChild(tr);
+    });
+  }
 
   // 成交记录（倒序，取最近50）
   const trades = (DATA.trades||[]).slice().reverse().slice(0,50);
