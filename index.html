@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>顺势策略 · 模拟交易</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // CDN 回退：jsdelivr 在境内常被墙/不稳定，加载失败时同步回退到 staticfile。
+  if (typeof Chart === 'undefined') {
+    document.write('<scr'+'ipt src="https://cdn.staticfile.net/Chart.js/4.4.1/chart.umd.min.js"></scr'+'ipt>');
+  }
+</script>
 <style>
   :root{
     --bg:#0e1117; --panel:#161b26; --panel2:#1c2230; --border:#262d3d;
