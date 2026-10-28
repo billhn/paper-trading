@@ -114,7 +114,7 @@
     <table id="holdingsTable">
       <thead><tr>
         <th>品种</th><th>方向</th><th>手数</th><th>开仓日</th><th class="num">开仓价</th>
-        <th class="num">最新价</th><th class="num">浮动盈亏</th>
+        <th class="num">最新价</th><th class="num">止损价</th><th class="num">止盈价</th><th class="num">浮动盈亏</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -240,6 +240,8 @@ function render(DATA){
       <td class="num">${h['开仓日']}</td>
       <td class="num">${fmt(h['开仓价'])}</td>
       <td class="num">${fmt(h['最新价'])}</td>
+      <td class="num">${fmt(h['止损价'])}</td>
+      <td class="num">${fmt(h['止盈价'])}</td>
       <td class="num ${colorFor(h['浮动盈亏%'])}" style="font-weight:600;">${pct(h['浮动盈亏%'])}</td>
     `;
     ht.appendChild(tr);
